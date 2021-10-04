@@ -1,0 +1,102 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploys LogGroup, Kinesis Data Stream, Subscription Filter and corresponding IAM roles & policies",
+  "Parameters": {
+    "apiID": {
+      "Type": "String",
+      "Description": "The ID of your API Gateway REST API instance."
+    },
+    "apiStageName": {
+      "Type": "String",
+      "Description": "The name of the latest stage deployed for your API Gateway REST API instance."
+    }
+  },
+  "Resources": {
+    "LogToCloudWatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": ["apigateway.amazonaws.com"] },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        },
+        "Description": "IAM Role to allow API Gateway instances to write to CloudWatch logs",
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs" ],
+        "RoleName": "APIGatewayToCloudWatchRole"
+      }
+    },
+    "APIGatewayLogAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": { "Fn::GetAtt": [ "LogToCloudWatchRole", "Arn" ] }
+      }
+    },
+    "LogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [ "", [ "API-Gateway-Execution-Logs_", { "Ref": "apiID" }, "/", { "Ref": "apiStageName" } ] ]
+        },
+        "RetentionInDays": 1
+      }
+    }
+  ,
+    "Kinesis": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "Name": { "Fn::Join" : [ "-", [ { "Ref": "apiID" }, "resurfaceio", "kds" ] ] },
+        "ShardCount": 1
+      }
+    },
+    "PushToKinesisRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [ { "Fn::Join": [ ".", [ "logs", { "Ref": "AWS::Region" }, "amazonaws", "com" ] ] } ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Description": "IAM Role to allow CloudWatch logs to be streamed into Kinesis",
+        "Policies": [ {
+          "PolicyName": "CloudWatchToKinesisPolicy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": "kinesis:PutRecord",
+                "Resource": { "Fn::GetAtt": [ "Kinesis", "Arn" ] }
+              }
+            ]
+          }
+        } ],
+        "RoleName": "CloudWatchToKinesisRole"
+      },
+      "DependsOn": [ "Kinesis" ]
+    },
+    "SubscriptionFilter": {
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "Properties": {
+        "DestinationArn": { "Fn::GetAtt": [ "Kinesis", "Arn" ] },
+        "FilterPattern": "?Method ?Endpoint ?Received",
+        "LogGroupName": {
+          "Fn::Join": [ "", [ "API-Gateway-Execution-Logs_", { "Ref": "apiID" }, "/", { "Ref": "apiStageName" } ] ]
+        },
+        "RoleArn": { "Fn::GetAtt": [ "PushToKinesisRole", "Arn" ] }
+      },
+      "DependsOn": [ "PushToKinesisRole", "APIGatewayLogAccount" ]
+    }
+  }
+}
