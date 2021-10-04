@@ -40,7 +40,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPInputStream;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -73,24 +72,17 @@ import Logger.HttpLoggerForAWSKinesis;
 @Slf4j
 public class KDSListener {
 
+    private static final String kinesisStreamName = System.getenv("KINESIS_STREAM_NAME");
+    private static final String awsRegion = System.getenv("AWS_REGION");
     /**
-     * Invoke the main method with 2 args: the stream name and (optionally) the region.
-     * Verifies valid inputs and then starts running the app.
+     * Verifies 2 env vars: the stream name and the region, and then starts running the app.
      */
     public static void main(String... args) {
-        if (args.length < 1) {
-            log.error("At a minimum, the stream name is required as the first argument. " +
-                    "The Region may be specified as the second argument.");
+        if (kinesisStreamName == null || awsRegion == null) {
+            log.error("Both the stream name and region are required as environment variables. ");
             System.exit(1);
         }
-
-        String streamName = args[0];
-        String region = null;
-        if (args.length > 1) {
-            region = args[1];
-        }
-
-        new KDSListener(streamName, region).run();
+        new KDSListener(kinesisStreamName, awsRegion).run();
     }
 
     private final String streamName;
@@ -98,13 +90,12 @@ public class KDSListener {
     private final KinesisAsyncClient kinesisClient;
 
     /**
-     * Constructor sets streamName and region. It also creates a KinesisClient object to send data to Kinesis.
-     * This KinesisClient is used to send dummy data so that the consumer has something to read; it is also used
-     * indirectly by the KCL to handle the consumption of the data.
+     * Constructor sets streamName and region. It also creates a KinesisClient object.
+     * This KinesisClient is used indirectly by the KCL to handle the consumption of the data.
      */
     private KDSListener(String streamName, String region) {
         this.streamName = streamName;
-        this.region = Region.of(ObjectUtils.firstNonNull(region, "us-east-2"));
+        this.region = Region.of(region);
         this.kinesisClient = KinesisClientUtil.createKinesisAsyncClient(KinesisAsyncClient.builder().region(this.region));
     }
 

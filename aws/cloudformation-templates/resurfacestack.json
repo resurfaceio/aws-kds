@@ -98,5 +98,15 @@
       },
       "DependsOn": [ "PushToKinesisRole", "APIGatewayLogAccount" ]
     }
+  },
+  "Outputs": {
+    "KinesisStreamName": {
+      "Description": "Set this value as KINESIS_STREAM_NAME environment variable before running the consumer app.",
+      "Value": { "Ref":  "Kinesis" }
+    },
+    "Region": {
+      "Description": "Set this value as AWS_REGION environment variable before running the consumer application.",
+      "Value": { "Ref": "AWS::Region" }
+    }
   }
 }
