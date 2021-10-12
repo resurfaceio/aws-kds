@@ -48,6 +48,8 @@ make stop      # halt and remove containers
 |:----------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|
 |`KINESIS_STREAM_NAME`        |Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `<<ID of your API>>-resurfaceio-kds`|
 |`AWS_REGION`                 |Region where the Kinesis Data Stream is deployed.                                                                                                |
+|`AWS_ACCESS_KEY_ID`          |AWS Credentials                                                                                                                                  |
+|`AWS_SECRET_ACCESS_KEY`      |AWS Credentials                                                                                                                                  |
 |`USAGE_LOGGERS_URL`          |(**Optional**) Resurface database connection URL.<br />Only necessary if your [Resurface instance](https://resurface.io/installation) uses a different connection URL than the one provided by default   |
 |`USAGE_LOGGERS_RULES`        |(**Optional**) Set of [rules](#protecting-user-privacy).<br />Only necessary if you want to exclude certain API calls from being logged.         |
 
