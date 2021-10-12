@@ -10,8 +10,8 @@ services:
       - '4002:4002'
 
   kds-consumer:
-    image: kinesis-resurface-consumer
-    container_name: kds-resurface-consumer
+    image: resurfaceio-kinesis-consumer
+    container_name: aws-kds-consumer
     env_file:
       - .env
     volumes:
