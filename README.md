@@ -42,7 +42,7 @@ make stop      # halt and remove containers
 
 ## Logging From AWS Kinesis
 
-- If you are running the containers locally, you need to set following the environment variables in the [`.env`](https://github.com/resurfaceio/azure-eh/blob/master/.env) file to their corresponding values before doing `make start`:
+- If you are running the containers locally, you need to set following the environment variables in the [`.env`](https://github.com/resurfaceio/aws-kds/blob/master/.env) file to their corresponding values before doing `make start`:
 
 | Variable                    | Set to                                                                                                                                          |
 |:----------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|
