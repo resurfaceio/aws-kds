@@ -108,7 +108,7 @@ public class HttpLoggerForAWSKinesis {
             System.out.println("Message sent");
         } catch (JSONException e) {
             System.err.printf("Message not sent due to parsing issue: %s\n", e.getMessage());
-        }
+                }
     }
 
     public boolean isEnabled() {
@@ -116,10 +116,7 @@ public class HttpLoggerForAWSKinesis {
     }
 
     private String[] getHeaders(String message) {
-        if (message.endsWith("[TRUNCATED]")) {
-            return message.substring(1).split(", ");
-        } else {
-            return message.substring(1, message.length() - 1).split(", ");
-        }
+        int end = message.endsWith("[TRUNCATED]") ? 11 : 1;
+        return message.substring(1, message.length() - end).split(", +(?=[^\\\"\\s]+(?==)|$)");
     }
 }
