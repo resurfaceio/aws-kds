@@ -246,8 +246,8 @@ public class KDSListener {
                         e.printStackTrace();
                     }
                     String unzippedData = new String(unzippedDataStream.toByteArray(), Charset.defaultCharset());
-                    log.info(unzippedData);
-                    log.info(LogEventsParser.Parse(unzippedData).toString());
+                    //log.info(unzippedData);
+                    //log.info(LogEventsParser.Parse(unzippedData).toString());
                     this.resurfaceioLogger.send(unzippedData);
                 });
             } catch (Throwable t) {

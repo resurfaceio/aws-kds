@@ -45,17 +45,30 @@ public class HttpLoggerForAWSKinesis {
                         break;
                     case 2:
                         // Query String
-                        String qs = message.substring(0, message.length() - 2);
-                        if (!qs.isEmpty()) request.setQueryString(qs);
+                        StringBuilder qsBuilder = new StringBuilder("");
+                        for (String param : getPairs(message)) {
+                            int sepIdx = param.indexOf('=');
+                            if (sepIdx >= 0) {
+                                String key = param.substring(0, sepIdx);
+                                String val = param.length() == sepIdx + 1 ? "" : param.substring(sepIdx + 1);
+                                this.request.addParam(key, val);
+                                qsBuilder.append(val.isEmpty() ? key + "&" : key + "=" + val + "&");
+                            }
+                        }
+                        String qs = qsBuilder.toString();
+                        if (!qs.isEmpty()) {
+                            request.setQueryString(qs.substring(0, qs.length() - 1));
+                        }
                         break;
                     case 3:
                         // Request Headers, Method
                     case 6:
                         // Request Headers, Endpoint
-                        for (String header : getHeaders(message)) {
+                        for (String header : getPairs(message)) {
                             int sepIdx = header.indexOf('=');
                             if (sepIdx >= 0) {
-                                this.request.addHeader(header.substring(0, sepIdx), header.substring(sepIdx + 1));
+                                String val = header.length() == sepIdx + 1 ? "" : header.substring(sepIdx + 1);
+                                this.request.addHeader(header.substring(0, sepIdx), val);
                             }
                         }
                         break;
@@ -81,10 +94,11 @@ public class HttpLoggerForAWSKinesis {
                         // Response Headers, Endpoint
                     case 12:
                         // Response Headers, Method
-                        for (String header : getHeaders(message)) {
+                        for (String header : getPairs(message)) {
                             int sepIdx = header.indexOf('=');
                             if (sepIdx >= 0) {
-                                this.response.addHeader(header.substring(0, sepIdx), header.substring(sepIdx + 1));
+                                String val = header.length() == sepIdx + 1 ? "" : header.substring(sepIdx + 1);
+                                this.response.addHeader(header.substring(0, sepIdx), val);
                             }
                         }
                         break;
@@ -115,7 +129,7 @@ public class HttpLoggerForAWSKinesis {
         return logger.isEnabled();
     }
 
-    private String[] getHeaders(String message) {
+    private String[] getPairs(String message) {
         int end = message.endsWith("[TRUNCATED]") ? 11 : 1;
         return message.substring(1, message.length() - end).split(", +(?=[^\\\"\\s]+(?==)|$)");
     }
