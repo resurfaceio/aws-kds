@@ -9,9 +9,8 @@ Easily log API requests and responses to your own [system of record](https://res
 
 ## Ports Used
 
-* 4002 - Resurface API Explorer
-* 4001 - Resurface microservice
-* 4000 - Trino database UI
+* 7700 - Resurface API Explorer & Trino database UI
+* 7701 - Resurface microservice
 
 ## Setup
 
