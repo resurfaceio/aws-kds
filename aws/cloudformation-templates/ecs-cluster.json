@@ -1,0 +1,96 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploys ECS cluster with both Resurface and the KDS Listener application containers",
+  "Parameters": {
+    "kinesisStreamName": {
+      "Type": "String",
+      "Description": "Name of the Kinesis Data Stream to consume data from."
+    },
+    "kdsRegion": {
+      "Type": "String",
+      "Description": "AWS Region where the Kinesis Data Stream has been deployed."
+    },
+    "resurfaceRules": {
+      "Type": "String",
+      "Description": "Logging rules. More info: https://resurface.io/logging-rules",
+      "Default": "include debug"
+    },
+    "resurfaceEntitlementToken": {
+      "Type": "String",
+      "Description": "Token used to connect to the Resurface Docker registry."
+    }
+  },
+  "Resources":{
+    "entitlementSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": "resurface/token",
+        "Description": "Resurface entitlement token. Used to pull images from the Resurface Docker registry.",
+        "SecretString": {
+          "Fn::Join": [ "", [
+            "{\"username\":\"resurfacelabs/release\", \"password\":\"",
+            { "Ref": "resurfaceEntitlementToken" },
+            ",\"}"
+          ]]
+        }
+      }
+    },
+    "resurfaceCluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "ResurfaceCluster"
+      }
+    },
+    "resurfaceTaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "Resurface",
+            "Image": "docker.resurface.io/release/resurface:3.0.19",
+            "RepositoryCredentials": { "Ref": "entitlementSecret" },
+            "Environment": {
+              "DB_SIZE": "2g"
+            },
+            "PortMappings": [
+              {
+                "ContainerPort": 7700,
+                "HostPort": 7700
+              },
+              {
+                "ContainerPort": 7701,
+                "HostPort": 7701
+              }
+            ],
+            "Cpu": 4096,
+            "Memory": 8192
+          },
+          {
+            "Name": "KDSListener",
+            "Image": "docker.resurface.io/release/awd-kds-listener:1.0.0",
+            "RepositoryCredentials": { "Ref": "entitlementSecret" },
+            "Environment": {
+              "USAGE_LOGGERS_URL": "http://localhost:7701/message",
+              "USAGE_LOGGERS_RULES": { "Ref": "resurfaceRules" },
+              "USAGE_LOGGERS_DISABLED": "false",
+              "KINESIS_STREAM_NAME": { "Ref": "kinesisStreamName" },
+              "AWS_REGION": { "Ref": "kdsRegion" }
+            }
+          }
+        ],
+        "NetworkMode": "awsvpc",
+        "Cpu": 4096,
+        "Memory": 8192
+      }
+    },
+    "resurfaceService": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "ResurfaceService",
+        "Cluster": { "Ref": "resurfaceCluster" },
+        "LaunchType": "FARGATE",
+        "TaskDefinition": { "Ref": "resurfaceTaskDef" }
+      }
+    }
+  }
+}
