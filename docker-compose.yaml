@@ -2,12 +2,11 @@ version: '3.2'
 
 services:
   resurface:
-    image: resurfaceio/resurface:2.3.1
-    container_name: resurface
+    image: docker.resurface.io/release/resurface:3.0.21
+    container_name: kds_resurface
     ports:
-      - '4000:4000'
-      - '4001:4001'
-      - '4002:4002'
+      - '7700:7700'
+      - '7701:7701'
 
   kds-consumer:
     image: resurfaceio-kinesis-consumer

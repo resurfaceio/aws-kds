@@ -22,7 +22,58 @@
   },
   "Resources":{
     "listenerIAMUser": {
-      "Type": "AWS::IAM::User"
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                  "kinesis:ListShards",
+                  "kinesis:GetShardIterator",
+                  "kinesis:GetRecords",
+                  "kinesis:DescribeStream"
+                ],
+                "Resource": { "Fn::Join" : [ ":", [ "arn:aws:kinesis:*", { "Ref": "AWS::AccountId" } ,"stream/*" ] ] }
+              }]
+            },
+            "PolicyName": "KDSPolicyForKCL"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                  "dynamodb:CreateTable",
+                  "dynamodb:PutItem",
+                  "dynamodb:DescribeTable",
+                  "dynamodb:GetItem",
+                  "dynamodb:Scan",
+                  "dynamodb:UpdateItem"
+                ],
+                "Resource": { "Fn::Join" : [ ":", [ "arn:aws:dynamodb:*", { "Ref": "AWS::AccountId" } ,"table/*" ] ] }
+              },
+              {
+                "Effect": "Allow",
+                "Action": "dynamodb:Scan",
+                "Resource": { "Fn::Join" : [ ":", [ "arn:aws:dynamodb:*", { "Ref": "AWS::AccountId" } ,"table/*/index/*" ] ] }
+              }]
+            },
+            "PolicyName": "DynamoDBPolicyForKCL"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": "cloudwatch:PutMetricData",
+                "Resource": "*"
+              }]
+            },
+            "PolicyName": "CloudWatchPolicyForKCL"
+          }          
+        ]
+      }
     },
     "awsCredentials": {
       "Type": "AWS::IAM::AccessKey",
@@ -173,7 +224,7 @@
           },
           {
             "Name": "KDSListener",
-            "Image": "docker.resurface.io/release/aws-kds-listener:1.0.0",
+            "Image": "docker.resurface.io/release/aws-kds-listener:1.0.1",
             "RepositoryCredentials": {
               "CredentialsParameter": { "Ref": "entitlementSecret" }
             },

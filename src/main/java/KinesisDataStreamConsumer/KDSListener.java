@@ -82,7 +82,11 @@ public class KDSListener {
             log.error("Both the stream name and region are required as environment variables. ");
             System.exit(1);
         }
-        new KDSListener(kinesisStreamName, awsRegion).run();
+        try {
+            new KDSListener(kinesisStreamName, awsRegion).run();
+        } catch (InterruptedException e) {
+            log.error("Main thread interrupted.", e);
+        }
     }
 
     private final String streamName;
@@ -99,7 +103,7 @@ public class KDSListener {
         this.kinesisClient = KinesisClientUtil.createKinesisAsyncClient(KinesisAsyncClient.builder().region(this.region));
     }
 
-    private void run() {
+    private void run() throws InterruptedException {
 
         /*
          * Sets up configuration for the KCL, including DynamoDB and CloudWatch dependencies. The final argument, a
@@ -136,33 +140,55 @@ public class KDSListener {
         schedulerThread.setDaemon(true);
         schedulerThread.start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
+                log.info("Waiting up to 20 seconds for shutdown to complete.");
+                try {
+                    gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    log.info("Interrupted while waiting for graceful shutdown. Continuing.");
+                } catch (ExecutionException e) {
+                    log.error("Exception while executing graceful shutdown.", e);
+                } catch (TimeoutException e) {
+                    log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
+                }
+                log.info("Completed, shutting down now.");
+            }
+        });
+
+        while (true) {
+            Thread.sleep(1000);
+        }
+
         /*
          * Allows termination of app by pressing Enter.
          */
-        System.out.println("Press enter to shutdown");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            reader.readLine();
-        } catch (IOException e) {
-            log.error("Caught exception while waiting for confirm. Shutting down.", e);
-        }
+        // System.out.println("Press enter to shutdown");
+        // BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        // try {
+        //     System.out.println(reader.readLine());
+        // } catch (IOException e) {
+        //     log.error("Caught exception while waiting for confirm. Shutting down.", e);
+        // }
 
         /*
          * Stops consuming data. Finishes processing the current batch of data already received from Kinesis
          * before shutting down.
          */
-        Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
-        log.info("Waiting up to 20 seconds for shutdown to complete.");
-        try {
-            gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.info("Interrupted while waiting for graceful shutdown. Continuing.");
-        } catch (ExecutionException e) {
-            log.error("Exception while executing graceful shutdown.", e);
-        } catch (TimeoutException e) {
-            log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
-        }
-        log.info("Completed, shutting down now.");
+        // Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
+        // log.info("Waiting up to 20 seconds for shutdown to complete.");
+        // try {
+        //     gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
+        // } catch (InterruptedException e) {
+        //     log.info("Interrupted while waiting for graceful shutdown. Continuing.");
+        // } catch (ExecutionException e) {
+        //     log.error("Exception while executing graceful shutdown.", e);
+        // } catch (TimeoutException e) {
+        //     log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
+        // }
+        // log.info("Completed, shutting down now.");
     }
 
 
