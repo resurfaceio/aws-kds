@@ -21,6 +21,15 @@
     }
   },
   "Resources":{
+    "listenerIAMUser": {
+      "Type": "AWS::IAM::User"
+    },
+    "awsCredentials": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "UserName": { "Ref": "listenerIAMUser" }
+      }
+    },
     "entitlementSecret": {
       "Type": "AWS::SecretsManager::Secret",
       "Properties": {
@@ -28,11 +37,111 @@
         "Description": "Resurface entitlement token. Used to pull images from the Resurface Docker registry.",
         "SecretString": {
           "Fn::Join": [ "", [
-            "{\"username\":\"resurfacelabs/release\", \"password\":\"",
+            "{\"username\":\"resurfacelabs/release\",\"password\":\"",
             { "Ref": "resurfaceEntitlementToken" },
-            ",\"}"
+            "\"}"
           ]]
         }
+      }
+    },
+    "ecsTaskExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "ecsTaskExecutionRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
+        "Policies": [
+          {
+            "PolicyName": "GetSecretPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": [
+                    {
+                      "Ref": "entitlementSecret"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "resurfaceVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "resurfaceSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24",
+        "VpcId": { "Ref": "resurfaceVPC" }
+      }
+    },
+    "resurfaceInternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "resurfaceGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": { "Ref": "resurfaceInternetGateway" },
+        "VpcId": { "Ref": "resurfaceVPC" }
+      }
+    },
+    "resurfaceRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "resurfaceVPC" }
+      }
+    },
+    "resurfaceRouteTableAssoc": {
+      "Type":"AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "resurfaceRouteTable" },
+        "SubnetId": { "Ref": "resurfaceSubnet" }
+      }
+    },
+    "resurfaceRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "resurfaceGatewayAttachment",
+      "Properties": {
+        "RouteTableId": { "Ref": "resurfaceRouteTable" },
+        "GatewayId": { "Ref":  "resurfaceInternetGateway" },
+        "DestinationCidrBlock": "0.0.0.0/0"
+      }
+    },
+    "resurfaceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allows access to API Explorer",
+        "GroupName": "resurfaceSecurityGroup",
+        "SecurityGroupIngress": [{
+          "CidrIp": "0.0.0.0/0",
+          "FromPort" : 7700,
+          "ToPort": 7701,
+          "IpProtocol": "tcp"
+        }],
+        "VpcId": { "Ref": "resurfaceVPC" }
       }
     },
     "resurfaceCluster": {
@@ -48,9 +157,8 @@
           {
             "Name": "Resurface",
             "Image": "docker.resurface.io/release/resurface:3.0.19",
-            "RepositoryCredentials": { "Ref": "entitlementSecret" },
-            "Environment": {
-              "DB_SIZE": "2g"
+            "RepositoryCredentials": {
+              "CredentialsParameter": { "Ref": "entitlementSecret" }
             },
             "PortMappings": [
               {
@@ -61,23 +169,55 @@
                 "ContainerPort": 7701,
                 "HostPort": 7701
               }
-            ],
-            "Cpu": 4096,
-            "Memory": 8192
+            ]
           },
           {
             "Name": "KDSListener",
-            "Image": "docker.resurface.io/release/awd-kds-listener:1.0.0",
-            "RepositoryCredentials": { "Ref": "entitlementSecret" },
-            "Environment": {
-              "USAGE_LOGGERS_URL": "http://localhost:7701/message",
-              "USAGE_LOGGERS_RULES": { "Ref": "resurfaceRules" },
-              "USAGE_LOGGERS_DISABLED": "false",
-              "KINESIS_STREAM_NAME": { "Ref": "kinesisStreamName" },
-              "AWS_REGION": { "Ref": "kdsRegion" }
-            }
+            "Image": "docker.resurface.io/release/aws-kds-listener:1.0.0",
+            "RepositoryCredentials": {
+              "CredentialsParameter": { "Ref": "entitlementSecret" }
+            },
+            "LogConfiguration":  {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-region": "us-west-2",
+                "awslogs-group": "/ecs/resurfaceTaskDef",
+                "awslogs-stream-prefix": "kds-listener"
+              }
+            },
+            "Environment": [
+              {
+                "Name": "USAGE_LOGGERS_URL",
+                "Value": "http://localhost:7701/message"
+              },
+              {
+                "Name": "USAGE_LOGGERS_RULES",
+                "Value": { "Ref": "resurfaceRules" }
+              },
+              {
+                "Name": "USAGE_LOGGERS_DISABLED",
+                "Value": "false"
+              },
+              {
+                "Name": "AWS_ACCESS_KEY_ID",
+                "Value": { "Ref": "awsCredentials" }
+              },
+              {
+                "Name": "AWS_SECRET_ACCESS_KEY",
+                "Value": { "Fn::GetAtt" : [ "awsCredentials", "SecretAccessKey" ] }
+              },
+              {
+                "Name": "KINESIS_STREAM_NAME",
+                "Value": { "Ref": "kinesisStreamName" }
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": { "Ref": "kdsRegion" }
+              }
+            ]
           }
         ],
+        "ExecutionRoleArn": { "Ref":  "ecsTaskExecutionRole"},
         "NetworkMode": "awsvpc",
         "Cpu": 4096,
         "Memory": 8192
@@ -87,9 +227,21 @@
       "Type": "AWS::ECS::Service",
       "Properties": {
         "ServiceName": "ResurfaceService",
-        "Cluster": { "Ref": "resurfaceCluster" },
         "LaunchType": "FARGATE",
-        "TaskDefinition": { "Ref": "resurfaceTaskDef" }
+        "Cluster": { "Ref": "resurfaceCluster" },
+        "TaskDefinition": { "Ref": "resurfaceTaskDef" },
+        "DesiredCount": 1,
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "SecurityGroups": [{
+              "Ref": "resurfaceSecurityGroup"
+            }],
+            "Subnets": [{
+              "Ref": "resurfaceSubnet"
+            }]
+          }
+        }
       }
     }
   }
