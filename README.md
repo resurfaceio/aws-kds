@@ -16,7 +16,7 @@ Easily log API requests and responses to your own [system of record](https://res
 
 In order to run Resurface for AWS, some previous configuration is needed. Click the **Launch Stack** button below to deploy all necessary resources as a _CloudFormation stack_:
 
-[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?stackName=resurface-api-gateway&templateURL=https%3A%2F%2Fresurfacetemplates.s3.us-west-2.amazonaws.com%2Fresurfacestack.json)
+[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?stackName=resurface-api-gateway&templateURL=https%3A%2F%2Fresurfacetemplates.s3.us-west-2.amazonaws.com%2Flogger-kinesis-stack.json)
 
 This creates and deploys a _Kinesis Data Stream_ instance, a _CloudWatch_ log group with a subscription filter, and all the corresponding _IAM_ roles and policies.
 
