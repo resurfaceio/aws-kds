@@ -122,7 +122,7 @@ public class HttpLoggerForAWSKinesis {
             System.out.println("Message sent");
         } catch (JSONException e) {
             System.err.printf("Message not sent due to parsing issue: %s\n", e.getMessage());
-                }
+        }
     }
 
     public boolean isEnabled() {

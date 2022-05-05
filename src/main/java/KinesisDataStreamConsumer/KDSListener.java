@@ -40,8 +40,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPInputStream;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import software.amazon.awssdk.regions.Region;
@@ -66,7 +64,7 @@ import software.amazon.kinesis.retrieval.polling.PollingConfig;
 import Logger.HttpLoggerForAWSKinesis;
 
 /**
- * This class will run a simple app that uses the KCL to read data and uses the AWS SDK to publish data.
+ * This class will run a simple app that uses the KCL to read data from a Kinesis Data Stream.
  * Before running this program you must first create a Kinesis stream through the AWS console or AWS SDK.
  */
 @Slf4j
@@ -74,6 +72,10 @@ public class KDSListener {
 
     private static final String kinesisStreamName = System.getenv("KINESIS_STREAM_NAME");
     private static final String awsRegion = System.getenv("AWS_REGION");
+    private final String streamName;
+    private final Region region;
+    private final KinesisAsyncClient kinesisClient;
+
     /**
      * Verifies 2 env vars: the stream name and the region, and then starts running the app.
      */
@@ -85,13 +87,9 @@ public class KDSListener {
         try {
             new KDSListener(kinesisStreamName, awsRegion).run();
         } catch (InterruptedException e) {
-            log.error("Main thread interrupted.", e);
+            log.error("Main thread interrupted. ", e);
         }
     }
-
-    private final String streamName;
-    private final Region region;
-    private final KinesisAsyncClient kinesisClient;
 
     /**
      * Constructor sets streamName and region. It also creates a KinesisClient object.
@@ -100,16 +98,18 @@ public class KDSListener {
     private KDSListener(String streamName, String region) {
         this.streamName = streamName;
         this.region = Region.of(region);
-        this.kinesisClient = KinesisClientUtil.createKinesisAsyncClient(KinesisAsyncClient.builder().region(this.region));
+        this.kinesisClient = KinesisClientUtil.createKinesisAsyncClient(
+                KinesisAsyncClient.builder().region(this.region)
+        );
     }
 
+    /*
+    * Sets up configuration for the KCL, including DynamoDB and CloudWatch dependencies. The final argument for
+    * the ConfigsBuilder, a ShardRecordProcessorFactory, is where the logic for record processing lives,
+    * and is located in a private class below. The configuration is then passed to the Scheduler, which starts
+    * consuming the records from the stream in a new thread.
+    */
     private void run() throws InterruptedException {
-
-        /*
-         * Sets up configuration for the KCL, including DynamoDB and CloudWatch dependencies. The final argument, a
-         * ShardRecordProcessorFactory, is where the logic for record processing lives, and is located in a private
-         * class below.
-         */
         DynamoDbAsyncClient dynamoClient = DynamoDbAsyncClient.builder().region(region).build();
         CloudWatchAsyncClient cloudWatchClient = CloudWatchAsyncClient.builder().region(region).build();
         ConfigsBuilder configsBuilder = new ConfigsBuilder(
@@ -133,65 +133,30 @@ public class KDSListener {
         );
 
         /*
-         * Kickoff the Scheduler. Record processing of the stream of dummy data will continue indefinitely
-         * until an exit is triggered.
+         * Kickoff the Scheduler. Record processing will continue indefinitely until an exit is triggered.
          */
         Thread schedulerThread = new Thread(scheduler);
-        schedulerThread.setDaemon(true);
         schedulerThread.start();
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
-                log.info("Waiting up to 20 seconds for shutdown to complete.");
-                try {
-                    gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    log.info("Interrupted while waiting for graceful shutdown. Continuing.");
-                } catch (ExecutionException e) {
-                    log.error("Exception while executing graceful shutdown.", e);
-                } catch (TimeoutException e) {
-                    log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
-                }
-                log.info("Completed, shutting down now.");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
+            log.info("Waiting up to 20 seconds for shutdown to complete.");
+            try {
+                gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                log.info("Interrupted while waiting for graceful shutdown. Continuing.");
+            } catch (ExecutionException e) {
+                log.error("Exception while executing graceful shutdown.", e);
+            } catch (TimeoutException e) {
+                log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
             }
-        });
-
-        while (true) {
-            Thread.sleep(1000);
-        }
-
-        /*
-         * Allows termination of app by pressing Enter.
-         */
-        // System.out.println("Press enter to shutdown");
-        // BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        // try {
-        //     System.out.println(reader.readLine());
-        // } catch (IOException e) {
-        //     log.error("Caught exception while waiting for confirm. Shutting down.", e);
-        // }
-
-        /*
-         * Stops consuming data. Finishes processing the current batch of data already received from Kinesis
-         * before shutting down.
-         */
-        // Future<Boolean> gracefulShutdownFuture = scheduler.startGracefulShutdown();
-        // log.info("Waiting up to 20 seconds for shutdown to complete.");
-        // try {
-        //     gracefulShutdownFuture.get(20, TimeUnit.SECONDS);
-        // } catch (InterruptedException e) {
-        //     log.info("Interrupted while waiting for graceful shutdown. Continuing.");
-        // } catch (ExecutionException e) {
-        //     log.error("Exception while executing graceful shutdown.", e);
-        // } catch (TimeoutException e) {
-        //     log.error("Timeout while waiting for shutdown.  Scheduler may not have exited.");
-        // }
-        // log.info("Completed, shutting down now.");
+            log.info("Completed, shutting down now.");
+        }));
     }
 
-
+    /**
+     * Factory class used by the KCL to create new RecordProcessors.
+     */
     private static class RecordProcessorFactory implements ShardRecordProcessorFactory {
         public ShardRecordProcessor shardRecordProcessor() {
             return new RecordProcessor();
@@ -200,19 +165,22 @@ public class KDSListener {
 
     /**
      * The implementation of the ShardRecordProcessor interface is where the heart of the record processing logic lives.
+     * After the Resurface.io logger is initialized, it sends processed data to the provided URL (USAGE_LOGGERS_URL).
      */
+    @Slf4j
     private static class RecordProcessor implements ShardRecordProcessor {
 
         private static final String SHARD_ID_MDC_KEY = "ShardId";
 
-        private static final Logger log = LoggerFactory.getLogger(RecordProcessor.class);
-
         private String shardId;
 
-        // Resurface variables
+        /**
+         * Resurface variables: database capture endpoint URL, logging rules, and enabler flag.
+         */
         private static final String resurfaceioURL = System.getenv("USAGE_LOGGERS_URL");
         private static final String resurfaceioRules = System.getenv("USAGE_LOGGERS_RULES");
         private static final Boolean resurfaceioEnabled = !"true".equals(System.getenv("USAGE_LOGGERS_DISABLED"));
+        private static final Boolean recordDataDebug = "true".equals(System.getenv("KCL_DEBUG_ENABLED"));
         private HttpLoggerForAWSKinesis resurfaceioLogger;
 
         /**
@@ -272,8 +240,14 @@ public class KDSListener {
                         e.printStackTrace();
                     }
                     String unzippedData = new String(unzippedDataStream.toByteArray(), Charset.defaultCharset());
-                    //log.info(unzippedData);
-                    //log.info(LogEventsParser.Parse(unzippedData).toString());
+                    if (recordDataDebug) {
+                        log.info(
+                                "Unzipped data for record pk: {} -- Seq: {} :\n{}",
+                                r.partitionKey(),
+                                r.sequenceNumber(),
+                                unzippedData
+                        );
+                    }
                     this.resurfaceioLogger.send(unzippedData);
                 });
             } catch (Throwable t) {
