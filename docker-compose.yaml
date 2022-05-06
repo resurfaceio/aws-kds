@@ -2,15 +2,15 @@ version: '3.2'
 
 services:
   resurface:
-    image: docker.resurface.io/release/resurface:3.0.21
-    container_name: kds_resurface
+    image: resurfaceio/resurface:3.1.22
+    container_name: resurface
     ports:
       - '7700:7700'
       - '7701:7701'
 
-  kds-consumer:
-    image: resurfaceio-kinesis-consumer
-    container_name: aws-kds-consumer
+  kds-listener:
+    image: aws-kds-listener
+    container_name: resurface-aws-listener
     env_file:
       - .env
     volumes:
