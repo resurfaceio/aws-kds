@@ -1,3 +1,5 @@
+// © 2016-2022 Resurface Labs Inc.
+
 package KinesisDataStreamConsumer;
 /*
  *  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
