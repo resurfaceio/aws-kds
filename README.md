@@ -4,8 +4,7 @@ Easily log API requests and responses to your own [system of record](https://res
 ## Requirements
 
 * docker
-* docker-compose
-* an Amazon Web Services subscription might be required in order to use AWS Kinesis and AWS API Gateway
+* an Amazon Web Services subscription might be required in order to use AWS Kinesis, AWS CloudWatch, and AWS API Gateway
 
 ## Ports Used
 
@@ -14,21 +13,90 @@ Easily log API requests and responses to your own [system of record](https://res
 
 ## Setup
 
-In order to run Resurface for AWS, some previous configuration is needed. Click the **Launch Stack** button below to deploy all necessary resources as a _CloudFormation stack_:
+In order to run Resurface for AWS, some previous configuration is needed. Specifically, 
+
+### Automatic deployment
+Click the **Launch Stack** button below to deploy all necessary resources as a [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html):
 
 [![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?stackName=resurface-api-gateway&templateURL=https%3A%2F%2Fresurfacetemplates.s3.us-west-2.amazonaws.com%2Flogger-kinesis-stack.json)
 
-This creates and deploys a _Kinesis Data Stream_ instance, a _CloudWatch_ log group with a subscription filter, and all the corresponding _IAM_ roles and policies.
+This uses [a custom template](https://github.com/resurfaceio/iac-templates/blob/master/aws/logger-kinesis-stack.json) to create and deploy a [Kinesis Data Streams instance](https://docs.aws.amazon.com/streams/latest/dev/introduction.html), a [CloudWatch log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html) with a [subscription filter](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html), and all the corresponding _IAM_ roles and policies to stream CloudWatch logs from your API Gateway instance to a Kinesis Data Stream.
 
-## Deploy to AWS
+Once the automatic deployment finishes, go to the **Outputs** section.
+<details>
+  <summary> Click to expand</summary>
+  
+  ![image]()
+</details>
 
-Click down below to deploy both containers as EC2 Instances and run them as a cloud-based solution
+Copy the listed values and update the [required environment variables](#logging-from-aws-kinesis) accordingly.
+<details>
+  <summary>Click to expand</summary>
+  
+  ![image]()
+</details>
 
-// Coming soon!
 
-## Deploy Locally
+### Manual setup
 
-Clone this repository to run the containers as an on-prem solution
+If you would like to configure everything yourself using the AWS console instead, just follow Resurface's [Capturing from AWS API Gateway get-started guide](https://resurface.io/aws-get-started#manual-setup), where the entire process is documented in a step-by-step manner.
+
+<a name="logging-from-aws-kinesis"/>
+
+## Streaming data From AWS Kinesis to Resurface
+
+- Set following the environment variables in your `.env` file:
+
+| Variable | Set to |
+|:---------|:-------|
+|`KINESIS_STREAM_NAME`|Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `<<ID of your API>>-resurfaceio-kds`|
+|`AWS_REGION`|Region where the Kinesis Data Stream is deployed.|
+|`AWS_ACCESS_KEY_ID`|AWS Credentials|
+|`AWS_SECRET_ACCESS_KEY`|AWS Credentials|
+|`USAGE_LOGGERS_URL`|DB capture endpoint for your [Resurface instance](https://resurface.io/installation)|
+|`USAGE_LOGGERS_RULES`|(**Optional**) Set of [rules](#protecting-user-privacy).<br />Only necessary if you want to exclude certain API calls from being logged.|
+
+- (Optional) Build the container image
+
+```bash
+docker build -t aws-kds-consumer:1.0.0 .
+```
+
+- Run the container
+
+```bash
+docker run -d --name aws-kds --env-file .env resurfaceio/aws-kds-consumer:1.0.0
+```
+
+Or, if you built the image yourself in the previous step:
+
+```bash
+docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.0.0
+```
+
+- Use your API as you always do. Go to the [API Explorer](https://resurface.io/docs#api-explorer) of your Resurface instance and verify that API Calls are being captured.
+
+<a name="run-on-eks"/>
+
+## Run Containers on Elastic Kubernetes Service (EKS)
+
+Using [Helm](https://helm.sh/) you can deploy this listener application to your running cluster
+
+```bash
+helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
+--set consumer.azure.enabled=true \
+--set consumer.aws.kdsname=KINESIS_STREAM_NAME \
+--set consumer.aws.region=AWS_REGION \
+--set consumer.aws.accesskeyid=AWS_ACCESS_KEY_ID \
+--set consumer.aws.accesskeysecret=AWS_SECRET_ACCESS_KEY
+```
+
+<a name="run-locally"/>
+
+## (Dev/Test) Run Containers Locally
+
+Clone this repository to run the containers as an on-prem solution.
+You will need to [install `docker-compose`](https://docs.docker.com/compose/install/) in addition to the requirements listed above.
 
 ```
 make start     # rebuild and start containers
@@ -37,22 +105,13 @@ make logs      # follow container logs
 make stop      # halt and remove containers
 ```
 
-<a name="logging_from_aws_kinesis"/>
+<a name="run-on-aws"/>
 
-## Logging From AWS Kinesis
+## (Dev/Test) Run Containers as AWS ECS/Fargate instances
 
-- If you are running the containers locally, you need to set following the environment variables in the [`.env`](https://github.com/resurfaceio/aws-kds/blob/master/.env) file to their corresponding values before doing `make start`:
+Click down below to deploy both containers as EC2 Instances and run them as a cloud-based solution
 
-| Variable                    | Set to                                                                                                                                          |
-|:----------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|
-|`KINESIS_STREAM_NAME`        |Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `<<ID of your API>>-resurfaceio-kds`|
-|`AWS_REGION`                 |Region where the Kinesis Data Stream is deployed.                                                                                                |
-|`AWS_ACCESS_KEY_ID`          |AWS Credentials                                                                                                                                  |
-|`AWS_SECRET_ACCESS_KEY`      |AWS Credentials                                                                                                                                  |
-|`USAGE_LOGGERS_URL`          |(**Optional**) Resurface database connection URL.<br />Only necessary if your [Resurface instance](https://resurface.io/installation) uses a different connection URL than the one provided by default   |
-|`USAGE_LOGGERS_RULES`        |(**Optional**) Set of [rules](#protecting-user-privacy).<br />Only necessary if you want to exclude certain API calls from being logged.         |
-
-- Use your API as you always do. Enjoy! 
+[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)]()
 
 <a name="privacy"/>
 
@@ -65,4 +124,4 @@ but logging rules are easily customized to meet the needs of any application.
 <a href="https://resurface.io/rules.html">Logging rules documentation</a>
 
 ---
-<small>&copy; 2016-2021 <a href="https://resurface.io">Resurface Labs Inc.</a></small>
+<small>&copy; 2016-2022 <a href="https://resurface.io">Resurface Labs Inc.</a></small>
