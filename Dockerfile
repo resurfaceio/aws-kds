@@ -5,6 +5,6 @@ COPY pom.xml /app/
 COPY src /app/src
 RUN ["mvn", "package"]
 
-FROM resurfaceio/alpine-jdk11:3.15.4c
+FROM resurfaceio/alpine-jdk11:3.15.4e
 COPY --from=0 /app/target/*.jar ./
-ENTRYPOINT ["java", "-jar", "logger-aws-1.0-SNAPSHOT-jar-with-dependencies.jar"]
+ENTRYPOINT ["java", "-jar", "logger-aws-1.0-SNAPSHOT.jar"]
