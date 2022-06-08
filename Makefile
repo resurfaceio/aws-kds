@@ -2,7 +2,7 @@ PROJECT_NAME=resurface-aws-logger
 
 start:
 	@docker stop resurface || true
-	@docker build -t aws-kds-consumer --no-cache .
+	@docker build -t aws-kds-consumer:1.0.0 --no-cache .
 	@docker-compose up --detach
 
 stop:
