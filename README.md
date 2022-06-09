@@ -49,7 +49,7 @@ If you would like to configure everything yourself using the AWS console instead
 
 | Variable | Set to |
 |:---------|:-------|
-|`KINESIS_STREAM_NAME`|Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `<<ID of your API>>-resurfaceio-kds`|
+|`KINESIS_STREAM_NAME`|Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `resurfaceio-kds-<<CloudFormation Stack ID>>`|
 |`AWS_REGION`|Region where the Kinesis Data Stream is deployed.|
 |`AWS_ACCESS_KEY_ID`|AWS Credentials|
 |`AWS_SECRET_ACCESS_KEY`|AWS Credentials|
