@@ -26,14 +26,14 @@ Once the automatic deployment finishes, go to the **Outputs** section.
 <details>
   <summary> Click to expand</summary>
   
-  ![image]()
+  ![image](https://user-images.githubusercontent.com/7117255/172840506-63846434-9395-41e4-9534-b92161486b6b.png)
 </details>
 
 Copy the listed values and update the [required environment variables](#logging-from-aws-kinesis) accordingly.
 <details>
   <summary>Click to expand</summary>
   
-  ![image]()
+  ![image](https://user-images.githubusercontent.com/7117255/172839889-7c6859c9-ff63-46ab-ac48-768695b4ef00.png)
 </details>
 
 
