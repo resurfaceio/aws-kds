@@ -49,6 +49,14 @@ public class HttpLoggerForAWSKinesis {
                     request.setMethod(message.substring(0, message.indexOf(',')));
                     start = logEvent.getLong("timestamp");
                 }
+                if ("Method request headers".equals(messageKey)) {
+                    int headerIdx = message.indexOf("X-Forwarded-For");
+                    if (headerIdx >= 0) {
+                        int commaIdx = message.indexOf(',', headerIdx);
+                        String[] header = message.substring(headerIdx, commaIdx).split("=");
+                        if (header.length > 1) this.request.addHeader(header[0], header[1]);
+                    }
+                }
                 if ("GATEWAY".equals(SCOPE) || "ALL".equals(SCOPE)) {
                     switch (messageKey) {
                         case "HTTP Method":
