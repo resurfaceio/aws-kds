@@ -9,7 +9,7 @@ services:
       - '7701:7701'
 
   kds-consumer:
-    image: aws-kds-consumer
+    image: aws-kds-consumer:1.0.1
     container_name: aws-kds
     env_file:
       - .env

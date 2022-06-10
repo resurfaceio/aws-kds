@@ -59,19 +59,19 @@ If you would like to configure everything yourself using the AWS console instead
 - (Optional) Build the container image
 
 ```bash
-docker build -t aws-kds-consumer:1.0.0 .
+docker build -t aws-kds-consumer:1.0.1 .
 ```
 
 - Run the container
 
 ```bash
-docker run -d --name aws-kds --env-file .env resurfaceio/aws-kds-consumer:1.0.0
+docker run -d --name aws-kds --env-file .env resurfaceio/aws-kds-consumer:1.0.1
 ```
 
 Or, if you built the image yourself in the previous step:
 
 ```bash
-docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.0.0
+docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.0.1
 ```
 
 - Use your API as you always do. Go to the [API Explorer](https://resurface.io/docs#api-explorer) of your Resurface instance and verify that API Calls are being captured.
