@@ -1,5 +1,5 @@
 # resurfaceio-aws-kds
-Easily log API requests and responses to your own [system of record](https://resurface.io/).
+Easily capture entire API requests and responses to your own [data lake](https://resurface.io/).
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Easily log API requests and responses to your own [system of record](https://res
 
 ## Setup
 
-In order to run Resurface for AWS, some previous configuration is needed. Specifically, 
+In order to run Resurface for AWS, some previous configuration is needed.
 
 ### Automatic deployment
 Click the **Launch Stack** button below to deploy all necessary resources as a [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html):
