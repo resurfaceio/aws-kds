@@ -1,4 +1,4 @@
-FROM maven:3.8.6-eclipse-temurin-17-alpine
+FROM maven:3.8.6-eclipse-temurin-8
 RUN mkdir -p /app
 WORKDIR /app
 COPY pom.xml /app/
