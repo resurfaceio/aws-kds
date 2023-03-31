@@ -51,36 +51,62 @@ If you would like to configure everything yourself using the AWS console instead
 |:---------|:-------|
 |`KINESIS_STREAM_NAME`|Name of your Kinesis Data Stream instance. If you used our JSON template to deploy the stack, this should be `resurfaceio-kds-<<CloudFormation Stack ID>>`|
 |`AWS_REGION`|Region where the Kinesis Data Stream is deployed.|
-|`AWS_ACCESS_KEY_ID`|AWS Credentials|
-|`AWS_SECRET_ACCESS_KEY`|AWS Credentials|
+|`AWS_ACCESS_KEY_ID`|AWS Credentials (**Optional** if running the container on AWS)|
+|`AWS_SECRET_ACCESS_KEY`|AWS Credentials (**Optional** if running the container on AWS)|
 |`USAGE_LOGGERS_URL`|DB capture endpoint for your [Resurface instance](https://resurface.io/installation)|
 |`USAGE_LOGGERS_RULES`|(**Optional**) Set of [rules](#protecting-user-privacy).<br />Only necessary if you want to exclude certain API calls from being logged.|
 
 - (Optional) Build the container image
 
 ```bash
-docker build -t aws-kds-consumer:1.0.1 .
+docker build -t aws-kds-consumer:1.1.0 .
 ```
 
 - Run the container
 
 ```bash
-docker run -d --name aws-kds --env-file .env resurfaceio/aws-kds-consumer:1.0.1
+docker run -d --name aws-kds --env-file .env resurfaceio/aws-kds-consumer:1.1.0
 ```
 
 Or, if you built the image yourself in the previous step:
 
 ```bash
-docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.0.1
+docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.1.0
 ```
 
 - Use your API as you always do. Go to the [API Explorer](https://resurface.io/docs#api-explorer) of your Resurface instance and verify that API Calls are being captured.
 
 <a name="run-on-eks"/>
 
-## Run Containers on Elastic Kubernetes Service (EKS)
+## Run Containers on Kubernetes
 
-Using [Helm](https://helm.sh/) you can deploy this listener application to your running cluster
+Using [Helm](https://helm.sh/) you can deploy this listener application to your running Elastic Kubernetes Service (EKS) cluster
+
+```bash
+helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
+--set consumer.azure.enabled=true \
+--set consumer.aws.kdsname=KINESIS_STREAM_NAME \
+--set consumer.aws.region=AWS_REGION
+```
+
+You will akso need to add the following permissions to the role attached to your EKS cluster
+
+```json
+"kinesis:DescribeStream",
+"kinesis:GetRecords",
+"kinesis:GetShardIterator",
+"kinesis:ListShards",
+"dynamodb:Scan",
+"dynamodb:CreateTable",
+"dynamodb:DescribeTable",
+"dynamodb:GetItem",
+"dynamodb:PutItem",
+"dynamodb:UpdateItem",
+"dynamodb:DeleteItem",
+"cloudwatch:PutMetricData"
+```
+
+If you are not running on EKS, you will need to pass your AWS credentials as well, like so:
 
 ```bash
 helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
@@ -113,7 +139,7 @@ make logs      # follow container logs
 make stop      # halt and remove containers
 ```
 
-<a name="run-on-aws"/>
+<!--a name="run-on-aws"/>
 
 ## (Dev/Test) Run Containers as AWS ECS/Fargate instances
 
@@ -121,7 +147,7 @@ Click down below to deploy both containers as EC2 Instances and run them as a cl
 
 [![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)]()
 
-<a name="privacy"/>
+<a name="privacy"/-->
 
 ## Protecting User Privacy
 
