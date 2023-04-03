@@ -84,7 +84,7 @@ Using [Helm](https://helm.sh/) you can deploy this listener application to your 
 
 ```bash
 helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
---set consumer.azure.enabled=true \
+--set consumer.aws.enabled=true \
 --set consumer.aws.kdsname=KINESIS_STREAM_NAME \
 --set consumer.aws.region=AWS_REGION
 ```
@@ -110,7 +110,7 @@ If you are not running on EKS, you will need to pass your AWS credentials as wel
 
 ```bash
 helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
---set consumer.azure.enabled=true \
+--set consumer.aws.enabled=true \
 --set consumer.aws.kdsname=KINESIS_STREAM_NAME \
 --set consumer.aws.region=AWS_REGION \
 --set consumer.aws.accesskeyid=AWS_ACCESS_KEY_ID \
