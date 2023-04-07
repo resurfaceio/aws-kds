@@ -13,8 +13,6 @@ Easily log API requests and responses to your own <a href="https://resurface.io"
 
 ## Deployment
 
-In order to run Resurface for AWS, some previous configuration is needed.
-
 ### Automatic deployment
 Click the **Launch Stack** button below to deploy all necessary resources as a [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html):
 
