@@ -4,17 +4,14 @@ Easily log API requests and responses to your own <a href="https://resurface.io"
 [![License](https://img.shields.io/github/license/resurfaceio/aws-kds)](https://github.com/resurfaceio/aws-kds/blob/master/LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-green.svg)](https://github.com/resurfaceio/aws-kds/blob/master/CONTRIBUTING.md)
 
-## Requirements
+## Contents
 
-* docker
-* an Amazon Web Services subscription might be required in order to use AWS Kinesis, AWS CloudWatch, and AWS API Gateway
+- [Deployment](#deployment)
+- [Configuration](#configuration)
+- [Running on EKS](#running-on-eks)
+- [Protecting User Privacy](#protecting-user-privacy)
 
-## Ports Used
-
-* 7700 - Resurface API Explorer & Trino database UI
-* 7701 - Resurface microservice
-
-## Setup
+## Deployment
 
 In order to run Resurface for AWS, some previous configuration is needed.
 
@@ -39,14 +36,11 @@ Copy the listed values and update the [required environment variables](#logging-
   ![image](https://user-images.githubusercontent.com/7117255/172839889-7c6859c9-ff63-46ab-ac48-768695b4ef00.png)
 </details>
 
-
 ### Manual setup
 
 If you would like to configure everything yourself using the AWS console instead, just follow Resurface's [Capturing from AWS API Gateway get-started guide](https://resurface.io/aws-get-started#manual-setup), where the entire process is documented in a step-by-step manner.
 
-<a name="logging-from-aws-kinesis"/>
-
-## Streaming data From AWS Kinesis to Resurface
+## Configuration
 
 - Set following the environment variables in your `.env` file:
 
@@ -79,9 +73,7 @@ docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.1.0
 
 - Use your API as you always do. Go to the [API Explorer](https://resurface.io/docs#api-explorer) of your Resurface instance and verify that API Calls are being captured.
 
-<a name="run-on-eks"/>
-
-## Run Containers on Kubernetes
+## Running on EKS
 
 Using [Helm](https://helm.sh/) you can deploy this listener application to your running Elastic Kubernetes Service (EKS) cluster
 
@@ -119,38 +111,6 @@ helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
 --set consumer.aws.accesskeyid=AWS_ACCESS_KEY_ID \
 --set consumer.aws.accesskeysecret=AWS_SECRET_ACCESS_KEY
 ```
-
-<a name="run-locally"/>
-
-## (Dev/Test) Run Containers Locally
-
-Clone this repository to run the containers as an on-prem solution.
-You will need to [install `docker-compose`](https://docs.docker.com/compose/install/) in addition to the requirements listed above.
-
-```bash
-git clone https://github.com/resurfaceio/aws-kds.git
-cd aws-kds
-make start
-```
-
-Additional commands:
-
-```bash
-make start     # rebuild and start containers
-make bash      # open shell session
-make logs      # follow container logs
-make stop      # halt and remove containers
-```
-
-<!--a name="run-on-aws"/>
-
-## (Dev/Test) Run Containers as AWS ECS/Fargate instances
-
-Click down below to deploy both containers as EC2 Instances and run them as a cloud-based solution
-
-[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)]()
-
-<a name="privacy"/-->
 
 ## Protecting User Privacy
 
