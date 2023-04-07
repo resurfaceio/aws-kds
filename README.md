@@ -1,5 +1,8 @@
 # resurfaceio-aws-kds
-Easily capture entire API requests and responses to your own [data lake](https://resurface.io/).
+Easily log API requests and responses to your own <a href="https://resurface.io">security data lake</a>.
+
+[![License](https://img.shields.io/github/license/resurfaceio/aws-kds)](https://github.com/resurfaceio/aws-kds/blob/master/LICENSE)
+[![Contributing](https://img.shields.io/badge/contributions-welcome-green.svg)](https://github.com/resurfaceio/aws-kds/blob/master/CONTRIBUTING.md)
 
 ## Requirements
 
