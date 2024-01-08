@@ -69,7 +69,7 @@ Or, if you built the image yourself in the previous step:
 docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.1.0
 ```
 
-- Use your API as you always do. Go to the [API Explorer](https://resurface.io/docs#api-explorer) of your Resurface instance and verify that API Calls are being captured.
+- Use your API as you always do. Go to the [Resurface UI](https://resurface.io/docs#api-explorer) and verify that API Calls are being captured.
 
 ## Running on EKS
 
@@ -99,7 +99,9 @@ You will akso need to add the following permissions to the role attached to your
 "cloudwatch:PutMetricData"
 ```
 
-If you are not running on EKS, you will need to pass your AWS credentials as well, like so:
+## Running on Kubernetes
+
+If you are not running on EKS, you will need to pass your AWS credentials:
 
 ```bash
 helm upgrade -i resurface resurfaceio/resurface --namespace resurface \
