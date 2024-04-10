@@ -1,5 +1,5 @@
-# resurfaceio-aws-kds
-Easily log API requests and responses to your own <a href="https://resurface.io">security data lake</a>.
+# aws-kds
+Capture API calls directly from AWS API Gateway to your own <a href="https://resurface.io">security data lake</a>.
 
 [![License](https://img.shields.io/github/license/resurfaceio/aws-kds)](https://github.com/resurfaceio/aws-kds/blob/master/LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-green.svg)](https://github.com/resurfaceio/aws-kds/blob/master/CONTRIBUTING.md)
@@ -16,9 +16,9 @@ Easily log API requests and responses to your own <a href="https://resurface.io"
 ### Automatic deployment
 Click the **Launch Stack** button below to deploy all necessary resources as a [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html):
 
-[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?stackName=resurface-api-gateway&templateURL=https%3A%2F%2Fresurfacetemplates.s3.us-west-2.amazonaws.com%2Flogger-kinesis-stack.json)
+[![Launch AWS Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?stackName=api-gateway-apisec-capture&templateURL=https%3A%2F%2Fapisec-cf-templates.s3.amazonaws.com%2Fcapture%2Fapi-gateway%2Flogger-kinesis.json)
 
-This uses [a custom template](https://github.com/resurfaceio/iac-templates/blob/master/aws/logger-kinesis-stack.json) to create and deploy a [Kinesis Data Streams instance](https://docs.aws.amazon.com/streams/latest/dev/introduction.html), a [CloudWatch log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html) with a [subscription filter](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html), and all the corresponding _IAM_ roles and policies to stream CloudWatch logs from your API Gateway instance to a Kinesis Data Stream.
+This uses [a custom template](https://github.com/resurfaceio/iac-templates/blob/master/aws/kds/logger-kinesis-stack.json) to create and deploy a [Kinesis Data Streams instance](https://docs.aws.amazon.com/streams/latest/dev/introduction.html), a [CloudWatch log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html) with a [subscription filter](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html), and all the corresponding _IAM_ roles and policies to stream CloudWatch logs from your API Gateway instance to a Kinesis Data Stream.
 
 Once the automatic deployment finishes, go to the **Outputs** section.
 <details>
@@ -36,7 +36,7 @@ Copy the listed values and update the [required environment variables](#logging-
 
 ### Manual setup
 
-If you would like to configure everything yourself using the AWS console instead, just follow Resurface's [Capturing from AWS API Gateway get-started guide](https://resurface.io/aws-get-started#manual-setup), where the entire process is documented in a step-by-step manner.
+If you would like to configure everything yourself using the AWS console instead, just follow Graylog API Security's [Capturing from AWS API Gateway get-started guide](https://resurface.io/aws-get-started#manual-setup), where the entire process is documented in a step-by-step manner.
 
 ## Configuration
 
@@ -69,7 +69,7 @@ Or, if you built the image yourself in the previous step:
 docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.1.0
 ```
 
-- Use your API as you always do. Go to the [Resurface UI](https://resurface.io/docs#api-explorer) and verify that API Calls are being captured.
+- Use your API as you always do. Go to the Graylog API Security web UI and verify that API Calls are being captured.
 
 ## Running on EKS
 
