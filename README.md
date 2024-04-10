@@ -1,5 +1,5 @@
 # aws-kds
-Capture API calls directly from AWS API Gateway to your own <a href="https://resurface.io">security data lake</a>.
+Capture API calls from AWS API Gateway to your own <a href="https://resurface.io">security data lake</a> using AWS Kinesis Data Streams.
 
 [![License](https://img.shields.io/github/license/resurfaceio/aws-kds)](https://github.com/resurfaceio/aws-kds/blob/master/LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-green.svg)](https://github.com/resurfaceio/aws-kds/blob/master/CONTRIBUTING.md)
