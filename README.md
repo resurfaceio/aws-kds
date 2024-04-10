@@ -34,9 +34,11 @@ Copy the listed values and update the [required environment variables](#logging-
   ![image](https://user-images.githubusercontent.com/7117255/172839889-7c6859c9-ff63-46ab-ac48-768695b4ef00.png)
 </details>
 
+<!--
 ### Manual setup
 
 If you would like to configure everything yourself using the AWS console instead, just follow Graylog API Security's [Capturing from AWS API Gateway get-started guide](https://resurface.io/aws-get-started#manual-setup), where the entire process is documented in a step-by-step manner.
+-->
 
 ## Configuration
 
