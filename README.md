@@ -69,7 +69,8 @@ Or, if you built the image yourself in the previous step:
 docker run -d --name aws-kds --env-file .env aws-kds-consumer:1.1.0
 ```
 
-- Use your API as you always do. Go to the Graylog API Security web UI and verify that API Calls are being captured.
+- Use your API as you always do.
+- Go to the web UI for your Graylog API Security instance and verify that API Calls are being captured.
 
 ## Running on EKS
 
